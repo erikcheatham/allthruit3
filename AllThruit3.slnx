@@ -1,8 +1,11 @@
 <Solution>
   <Project Path="AllThruit3.AppHost/AllThruit3.AppHost.csproj" />
+  <Project Path="AllThruit3.Data/AllThruit3.Data.csproj" />
   <Project Path="AllThruit3.ServiceDefaults/AllThruit3.ServiceDefaults.csproj" />
   <Project Path="AllThruit3/AllThruit3.Shared/AllThruit3.Shared.csproj" />
   <Project Path="AllThruit3/AllThruit3.Web.Client/AllThruit3.Web.Client.csproj" />
   <Project Path="AllThruit3/AllThruit3.Web/AllThruit3.Web.csproj" />
-  <Project Path="AllThruit3/AllThruit3/AllThruit3.csproj" />
+  <Project Path="AllThruit3/AllThruit3/AllThruit3.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
 </Solution>
