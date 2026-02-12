@@ -35,8 +35,8 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-		<!-- Suppress NETSDK1082 for client RIDs in preview -->
-		<NoWarn>$(NoWarn);NETSDK1082</NoWarn>
+		<!-- Suppress NETSDK1082 for client RIDs in preview, plus WMC1006 and CS1591 for clean output -->
+		<NoWarn>$(NoWarn);NETSDK1082;WMC1006;CS1591</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<!-- App Icon -->

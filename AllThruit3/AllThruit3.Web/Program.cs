@@ -1,45 +1,39 @@
-using AllThruit3.Data.Contexts;
-using AllThruit3.Data.Entities;
 using AllThruit3.Data.Extensions;
 using AllThruit3.Shared.Extensions;
 using AllThruit3.Shared.Services;
 using AllThruit3.Web.Components;
+using AllThruit3.Web.Components.Account;
 using AllThruit3.Web.Extensions;
 using AllThruit3.Web.Services;
 using Carter;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Simplified config: Rely on env vars from launchSettings/host
 builder.Configuration
     .AddEnvironmentVariables()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
-    { "AppSettings:TMDBUrl", "https://api.themoviedb.org/3/" },
-    { "AppSettings:TMDBBearerToken", "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjZWJiMWRmMDk3MjY1MDljMTdjZDBjNjIxZDU0MDkwYSIsIm5iZiI6MTc2MDg5NTMwMS4wMzksInN1YiI6IjY4ZjUyMTQ1NDI5NmNmMjRiNmY5OWY2MSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.5j0B4CHgvIFrgeLJLV8DddIrQD5l7ObDbo3u5hxqnlM" },
-    { "AppSettings:ApiBaseUrl", "https://localhost:7199/" }
-});
+        { "AppSettings:TMDBUrl", "https://api.themoviedb.org/3/" },
+        { "AppSettings:TMDBBearerToken", "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjZWJiMWRmMDk3MjY1MDljMTdjZDBjNjIxZDU0MDkwYSIsIm5iZiI6MTc2MDg5NTMwMS4wMzksInN1YiI6IjY4ZjUyMTQ1NDI5NmNmMjRiNmY5OWY2MSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.5j0B4CHgvIFrgeLJLV8DddIrQD5l7ObDbo3u5hxqnlM" },
+        { "AppSettings:ApiBaseUrl", "https://localhost:7199/" }
+    });
 
 builder.AddServiceDefaults();
-
 // Add data abstractions (DbContext, Identity, repos, Blob, initializer)
 builder.Services.AddDataServices(builder.Configuration);
-
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddCascadingAuthenticationState();
-//builder.Services.AddScoped<IdentityRedirectManager>();
-//builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddScoped<IdentityRedirectManager>();
+builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
 builder.Services.AddAuthentication().AddIdentityCookies();
-
 builder.Services.AddAuthorization();
 
 // HttpClient for TMDB/internal calls (if not moved to Shared)
@@ -53,7 +47,7 @@ builder.Services.AddSharedServices(builder.Configuration);
 builder.Services.AddCarter();
 
 // Register custom endpoints (scans Web assembly for IEndpoint impls like MediaEndpoint)
-builder.Services.AddEndpoints(typeof(Program).Assembly);  // Or specify typeof(MediaEndpoint).Assembly if separate
+builder.Services.AddEndpoints(typeof(Program).Assembly); // Or specify typeof(MediaEndpoint).Assembly if separate
 
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
@@ -87,16 +81,31 @@ else
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+
 app.UseHttpsRedirection();
+
+app.UseRouting();  // Add this to enable routing middleware before UseEndpoints
+
 app.UseAntiforgery();
-app.UseStaticFiles();  // Add this to serve Blazor JS/runtime
-app.MapStaticAssets();  // Keep if needed for custom assets
+
+app.UseStaticFiles();
+
+app.UseBlazorFrameworkFiles();
+
+app.MapStaticAssets();
+
 app.MapCarter();
+
+// Map custom endpoints (after Carter for integration)
 app.MapEndpoints();
 
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(AllThruit3.Shared._Imports).Assembly);
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapRazorComponents<App>()
+        .AddInteractiveServerRenderMode()
+        .AddInteractiveWebAssemblyRenderMode()
+        .AddAdditionalAssemblies(
+            typeof(AllThruit3.Shared._Imports).Assembly);
+});
 
 app.Run();

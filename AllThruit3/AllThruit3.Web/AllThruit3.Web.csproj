@@ -11,6 +11,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\AllThruit3.Data\AllThruit3.Data.csproj" />
     <ProjectReference Include="..\..\AllThruit3.ServiceDefaults\AllThruit3.ServiceDefaults.csproj" />
+	<ProjectReference Include="..\AllThruit3.Web.Client\AllThruit3.Web.Client.csproj">
+		<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</ProjectReference>
     <PackageReference Include="Azure.Messaging.ServiceBus" />
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Carter" />
@@ -37,5 +41,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore.Filters" />
   </ItemGroup>
+
+    <ItemGroup>
+	    <Content Update="wwwroot\_framework\blazor.webassembly.js">
+		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		    <Link>wwwroot\_framework\blazor.webassembly.js</Link>
+		    <TargetPath>wwwroot\_framework\blazor.webassembly.js</TargetPath>
+	    </Content>
+    </ItemGroup>
 
 </Project>
