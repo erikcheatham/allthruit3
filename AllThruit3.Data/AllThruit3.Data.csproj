@@ -1,27 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
-    <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="Mapster" Version="7.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.13.1" />
-  </ItemGroup>
-
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Azure.Storage.Blobs" />
+		<PackageReference Include="Dapper" />
+		<PackageReference Include="Mapster" />
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" >
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" >
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.Extensions.Azure" />
+	</ItemGroup>
+	<ItemGroup>
+		<Folder Include="Migrations\" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\AllThruit3\AllThruit3.Shared\AllThruit3.Shared.csproj" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
+		<PackageReference Remove="Azure.Storage.Blobs" />
+		<PackageReference Remove="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+		<PackageReference Remove="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" />
+		<PackageReference Remove="Microsoft.EntityFrameworkCore.SqlServer" />
+		<PackageReference Remove="Microsoft.EntityFrameworkCore.Design" />
+		<PackageReference Remove="Microsoft.EntityFrameworkCore.Tools" />
+		<PackageReference Remove="Microsoft.Extensions.Azure" />
+	</ItemGroup>
 </Project>

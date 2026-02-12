@@ -1,0 +1,98 @@
+﻿@page "/media-search"
+@using AllThruit3.Shared.Common
+@using AllThruit3.Shared.Common.Handlers
+@using AllThruit3.Shared.Features.Media
+@using AllThruit3.Shared.Features.Utilities
+@using AllThruit3.Shared.Models
+@using System.Threading
+@inject IQueryHandler<SearchMediaQuery, MediaSearchResponse> MediaSearchHandler
+
+<div class="container mt-4">
+    <h2 class="mb-3">Search Movies/TV Shows</h2>
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" @bind="searchQuery" placeholder="Enter movie or TV name..." />
+        <select class="form-select" @bind="mediaType">
+            <option value="movie">Movie</option>
+            <option value="tv">TV Show</option>
+        </select>
+        <button class="btn btn-primary" @onclick="SearchMedia">Search</button>
+    </div>
+    @if (isLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status"></div>
+            <p>Loading...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+    else if (results != null && results.Count > 0)
+    {
+        <div class="row">
+            @foreach (var item in results)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="@TMDBHelper.GetImageUrl(item.PosterPath, "w500")" class="card-img-top" alt="@(item.Title ?? item.Name) Poster" />
+                        <div class="card-body">
+                            <h5 class="card-title">@item.Title</h5>
+                            <p class="card-text">@item.Overview</p>
+                            <p class="card-text"><small class="text-muted">Release: @item.ReleaseDate | Popularity: @item.Popularity</small></p>
+                            <img src="@TMDBHelper.GetImageUrl(item.BackdropPath, "w1280")" class="img-fluid mt-2" alt="@(item.Title ?? item.Name) Backdrop" />
+                            <!-- Add review button or link to detail page -->
+                            <a href="/movie/@item.Id" class="btn btn-primary">Review</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p>@(string.IsNullOrEmpty(responseMessage) ? "No results found." : responseMessage)</p>
+    }
+</div>
+
+@code {
+    private string searchQuery = "Inception";
+    private string mediaType = "movie";
+    private List<MediaResult>? results;
+    private string? responseMessage;
+    private bool isLoading;
+    private string? errorMessage;
+
+    private async Task SearchMedia()
+    {
+        isLoading = true;
+        errorMessage = null;
+        responseMessage = null;
+        results = null;
+
+        try
+        {
+            var query = new SearchMediaQuery(searchQuery, mediaType);
+            var result = await MediaSearchHandler.Handle(query, CancellationToken.None);
+
+            if (result.IsFailure)
+            {
+                errorMessage = result.Error.Message;  // e.g., validation or TMDB error
+            }
+            else
+            {
+                var response = result.Value;
+                responseMessage = response.Message;
+                results = response.Results;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An unexpected error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

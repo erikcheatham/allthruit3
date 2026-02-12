@@ -1,0 +1,131 @@
+﻿@page "/reviews"
+@using AllThruit3.Shared.DTOs
+@using AllThruit3.Shared.Services
+@inject IReviewService ReviewService
+<div class="container">
+    <div class="row">
+        <div class="col-md-4 wheel angry" @onwheel="HandleWheel" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+            <h3>Angry Reviews</h3>
+            <Virtualize ItemsProvider="LoadAngryReviews" Context="item">
+                <div class="review-card" style="transform: scale(@CalculateZoom(item.Position, CurrentScroll)) translateZ(@CalculateZ(item.Position));">
+                    <img src="@item.Review.MoviePosterUrl" alt="@item.Review.MovieTitle" />
+                    <p>@item.Review.Content</p>
+                    <small>Rating: @item.Review.Rating/10</small>
+                </div>
+            </Virtualize>
+        </div>
+        <div class="col-md-4 wheel awestruck" @onwheel="HandleWheel" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+            <h3>Awestruck Reviews</h3>
+            <Virtualize ItemsProvider="LoadAwestruckReviews" Context="item">
+                <div class="review-card" style="transform: scale(@CalculateZoom(item.Position, CurrentScroll)) translateZ(@CalculateZ(item.Position));">
+                    <img src="@item.Review.MoviePosterUrl" alt="@item.Review.MovieTitle" />
+                    <p>@item.Review.Content</p>
+                    <small>Rating: @item.Review.Rating/10</small>
+                </div>
+            </Virtualize>
+        </div>
+        <div class="col-md-4 wheel informative" @onwheel="HandleWheel" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+            <h3>Informative Reviews</h3>
+            <Virtualize ItemsProvider="LoadInformativeReviews" Context="item">
+                <div class="review-card" style="transform: scale(@CalculateZoom(item.Position, CurrentScroll)) translateZ(@CalculateZ(item.Position));">
+                    <img src="@item.Review.MoviePosterUrl" alt="@item.Review.MovieTitle" />
+                    <p>@item.Review.Content</p>
+                    <small>Rating: @item.Review.Rating/10</small>
+                </div>
+            </Virtualize>
+        </div>
+    </div>
+</div>
+<style>
+    .wheel {
+        perspective: 1000px; /* 3D depth */
+        overflow-y: auto;
+        height: 80vh; /* Full viewport height for scrolling */
+        transform-style: preserve-3d; /* Enable 3D for children */
+    }
+
+    .review-card {
+        transition: transform 0.3s ease; /* Smooth zoom/telescope */
+        background: white; /* Bootstrap card style */
+        border: 1px solid #ddd;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    .angry {
+        background: rgba(255,0,0,0.1);
+    }
+    /* Vibe colors */
+    .awestruck {
+        background: rgba(0,255,0,0.1);
+    }
+
+    .informative {
+        background: rgba(0,0,255,0.1);
+    }
+</style>
+@code {
+    private double CurrentScroll { get; set; } = 0; // Track scroll position
+    private double TouchStartY { get; set; }
+
+    // UI wrapper to add Position without mutating DTO
+    private record ReviewWheelItem(ReviewDTO Review, int Position);
+
+    private async ValueTask<ItemsProviderResult<ReviewWheelItem>> LoadAngryReviews(ItemsProviderRequest request)
+    {
+        var reviews = await ReviewService.GetByVibeAsync("Angry");
+        return await GetWheelItems(reviews, request);
+    }
+
+    private async ValueTask<ItemsProviderResult<ReviewWheelItem>> LoadAwestruckReviews(ItemsProviderRequest request)
+    {
+        var reviews = await ReviewService.GetByVibeAsync("Awestruck");
+        return await GetWheelItems(reviews, request);
+    }
+
+    private async ValueTask<ItemsProviderResult<ReviewWheelItem>> LoadInformativeReviews(ItemsProviderRequest request)
+    {
+        var reviews = await ReviewService.GetByVibeAsync("Informative");
+        return await GetWheelItems(reviews, request);
+    }
+
+    // Shared logic for virtualization + infinite loop simulation
+    private async ValueTask<ItemsProviderResult<ReviewWheelItem>> GetWheelItems(List<ReviewDTO> reviews, ItemsProviderRequest request)
+    {
+        if (reviews.Count == 0) return new ItemsProviderResult<ReviewWheelItem>(Enumerable.Empty<ReviewWheelItem>(), 0);
+        // Simulate infinite by duplicating list if nearing end (e.g., request.StartIndex > reviews.Count * 2)
+        var totalVirtualCount = reviews.Count * 10; // Arbitrary large for "infinite" feel; adjust based on perf
+        var effectiveIndex = request.StartIndex % reviews.Count; // Loop back
+        var slice = reviews.Skip(effectiveIndex).Take(request.Count).ToList();
+        // If slice is short, append from start for seamless loop
+        if (slice.Count < request.Count)
+        {
+            slice.AddRange(reviews.Take(request.Count - slice.Count));
+        }
+        // Wrap with positions (global for the virtual list)
+        var items = slice.Select((r, i) => new ReviewWheelItem(r, request.StartIndex + i)).ToList();
+        return new ItemsProviderResult<ReviewWheelItem>(items, totalVirtualCount);
+    }
+
+    private void HandleWheel(WheelEventArgs e)
+    {
+        CurrentScroll += e.DeltaY; // Scroll down/up
+        if (CurrentScroll < 0) CurrentScroll = 0; // Bounds (or wrap for loop: CurrentScroll %= max)
+        StateHasChanged(); // Re-render for zoom updates
+    }
+
+    private void HandleTouchStart(TouchEventArgs e) => TouchStartY = e.Touches[0].ClientY;
+
+    private void HandleTouchMove(TouchEventArgs e)
+    {
+        var deltaY = TouchStartY - e.Touches[0].ClientY;
+        CurrentScroll += deltaY; // Drag to scroll
+        TouchStartY = e.Touches[0].ClientY;
+        StateHasChanged();
+    }
+
+    private void HandleTouchEnd(TouchEventArgs e) { /* Optional: Add momentum with JS interop if needed */ }
+
+    private double CalculateZoom(int position, double scroll) => 1 + (position - scroll / 100) * 0.05; // Telescoping scale
+    private string CalculateZ(int position) => $"{(position % 10) * 50}px"; // Z-depth for 3D, loops every 10
+}
