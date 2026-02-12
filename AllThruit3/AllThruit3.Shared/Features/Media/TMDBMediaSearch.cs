@@ -1,13 +1,12 @@
 ﻿using AllThruit3.Shared.Common;
 using AllThruit3.Shared.Common.Handlers;
-using AllThruit3.Shared.Models;  // For MediaResult
-using AllThruit3.Shared.Services;  // For ITMDBClient
+using AllThruit3.Shared.Models;
+using AllThruit3.Shared.Services;
 using FluentValidation;
 using System.Text.Json.Serialization;
 
 namespace AllThruit3.Shared.Features.Media;
 
-// TMDB-specific DTOs (for raw JSON deserialization)
 public class TMDBSearchResponse
 {
     [JsonPropertyName("page")] public int Page { get; set; }

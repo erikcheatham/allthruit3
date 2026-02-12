@@ -5,16 +5,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
-	<BlazorWebAssemblyEnableCompression>true</BlazorWebAssemblyEnableCompression>
+	<StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+	<!--<BlazorWebAssemblyEnableCompression>true</BlazorWebAssemblyEnableCompression>-->
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\AllThruit3.Data\AllThruit3.Data.csproj" />
     <ProjectReference Include="..\..\AllThruit3.ServiceDefaults\AllThruit3.ServiceDefaults.csproj" />
 	<ProjectReference Include="..\AllThruit3.Web.Client\AllThruit3.Web.Client.csproj">
-		<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-	</ProjectReference>
+    <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+</ProjectReference>
     <PackageReference Include="Azure.Messaging.ServiceBus" />
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Carter" />
@@ -23,6 +24,7 @@
     <PackageReference Include="MassTransit.Azure.ServiceBus.Core" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+	<PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
@@ -35,19 +37,12 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Azure" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" />
     <PackageReference Include="Scrutor" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore.Filters" />
   </ItemGroup>
-
-    <ItemGroup>
-	    <Content Update="wwwroot\_framework\blazor.webassembly.js">
-		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		    <Link>wwwroot\_framework\blazor.webassembly.js</Link>
-		    <TargetPath>wwwroot\_framework\blazor.webassembly.js</TargetPath>
-	    </Content>
-    </ItemGroup>
 
 </Project>

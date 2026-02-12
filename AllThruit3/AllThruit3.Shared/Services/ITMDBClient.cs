@@ -37,15 +37,37 @@ public class TMDBClient : ITMDBClient
         }
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var tmdbResponse = JsonSerializer.Deserialize<MediaSearchResponse>(json, options);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull // Optional: Clean up nulls
+        };
+
+        // Deserialize to raw TMDB model
+        var tmdbResponse = JsonSerializer.Deserialize<TMDBSearchResponse>(json, options);
 
         if (tmdbResponse?.Results == null || !tmdbResponse.Results.Any())
         {
             return new MediaSearchResponse { Message = "No results found." };
         }
 
+        // Configure Mapster for conditional mapping (TV/movie diffs)
+        TypeAdapterConfig<TMDBMediaItem, MediaResult>
+            .NewConfig()
+            .Map(dest => dest.Title, src => src.Title ?? src.Name) // Fallback to Name for TV
+            .Map(dest => dest.ReleaseDate, src => src.ReleaseDate ?? src.FirstAirDate) // Fallback to FirstAirDate for TV
+            .Compile(); // Compile once (or move to global config in ServiceCollectionExtensions)
+
+        // Adapt results (ignores extra TMDB fields like GenreIds if not in MediaResult)
         var results = tmdbResponse.Results.Adapt<List<MediaResult>>();
+
+        // Optional: Add pagination/message if needed in domain model
         return new MediaSearchResponse { Results = results };
+
+        //return new MediaSearchResponse
+        //{
+        //    Results = results,
+        //    Message = $"Found {tmdbResponse.TotalResults} results (page {tmdbResponse.Page} of {tmdbResponse.TotalPages})."
+        //};
     }
 }

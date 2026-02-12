@@ -63,21 +63,14 @@ public static class ServiceCollectionExtensions
             // Client-only (MAUI/Blazor Hybrid / WASM)
             services.AddAuthorizationCore();
             services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
-            services.AddHttpClient<IReviewService, ReviewService>(client =>
-            {
-                var baseUrl = configuration.GetValue<string>("AppSettings:ApiBaseUrl")
-                    ?? "https://localhost:7199/";
-                client.BaseAddress = new Uri(baseUrl);
-            });
+            services.AddScoped<IReviewService>(sp =>
+                new ReviewService(sp.GetRequiredService<IHttpClientFactory>().CreateClient("ApiClient"))
+            );
 
-            services.AddHttpClient<IIdentityClient, IdentityClient>((sp, client) =>
-            {
-                var configuration = sp.GetRequiredService<IConfiguration>(); // Inject config
-                var baseUrl = configuration.GetValue<string>("AppSettings:ApiBaseUrl") ?? "https://localhost:7199/";
-                client.BaseAddress = new Uri(baseUrl);
-                // Optional: Add Polly retries like TMDB if needed
-                // .AddPolicyHandler(HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
-            });
+            // Optionally add other client services similarly, e.g., IIdentityClient
+            services.AddScoped<IIdentityClient>(sp =>
+                new IdentityClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("ApiClient"))
+            );
 
             // Scan/register client-only handlers (e.g., Identity proxies)
             var assembliesToScan = new[]

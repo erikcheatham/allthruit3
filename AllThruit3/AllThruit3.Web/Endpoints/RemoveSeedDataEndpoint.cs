@@ -3,7 +3,7 @@ using AllThruit3.Shared.Common;
 using AllThruit3.Shared.Common.Handlers;
 using Carter;
 using FluentValidation;
-using Microsoft.AspNetCore.Mvc;  // For [FromServices]
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using static AllThruit3.Web.Endpoints.RemoveSeedData;
 

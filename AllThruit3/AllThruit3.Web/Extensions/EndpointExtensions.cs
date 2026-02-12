@@ -12,32 +12,31 @@ public static class EndpointExtensions
 {
     public static IServiceCollection AddEndpoints(this IServiceCollection services, Assembly assembly)
     {
-        ServiceDescriptor[] serviceDescriptors = assembly
+        ServiceDescriptor[] serviceDescriptors = [.. assembly
             .DefinedTypes
             .Where(type => type is { IsAbstract: false, IsInterface: false } &&
                            type.IsAssignableTo(typeof(IEndpoint)))
-            .Select(type => ServiceDescriptor.Transient(typeof(IEndpoint), type))
-            .ToArray();
+            .Select(type => ServiceDescriptor.Transient(typeof(IEndpoint), type))];
 
         services.TryAddEnumerable(serviceDescriptors);
 
         return services;
     }
 
-    public static IApplicationBuilder MapEndpoints(
-        this WebApplication app,
-        RouteGroupBuilder? routeGroupBuilder = null)
+    public static IEndpointRouteBuilder MapEndpoints(
+    this IEndpointRouteBuilder builder,
+    RouteGroupBuilder? routeGroupBuilder = null)
     {
-        IEnumerable<IEndpoint> endpoints = app.Services.GetRequiredService<IEnumerable<IEndpoint>>();
+        var endpoints = builder.ServiceProvider.GetRequiredService<IEnumerable<IEndpoint>>();
 
-        IEndpointRouteBuilder builder = routeGroupBuilder is null ? app : routeGroupBuilder;
+        var target = routeGroupBuilder ?? builder;
 
-        foreach (IEndpoint endpoint in endpoints)
+        foreach (var endpoint in endpoints)
         {
-            endpoint.MapEndpoint(builder);
+            endpoint.MapEndpoint(target);
         }
 
-        return app;
+        return builder;
     }
 
     public static RouteHandlerBuilder HasPermission(this RouteHandlerBuilder app, string permission)

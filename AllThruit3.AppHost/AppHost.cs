@@ -1,7 +1,10 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-builder.AddProject<Projects.AllThruit3>("allthruit3");
+//var blobs = builder.AddAzureStorage("storage").AddBlobs("movieblobs");
 
-builder.AddProject<Projects.AllThruit3_Web>("allthruit3-web");
+var web = builder.AddProject<Projects.AllThruit3_Web>("allthruit3-web")
+    .WithExternalHttpEndpoints();  // Exposes API/WASM ports externally
+
+builder.AddProject<Projects.AllThruit3>("allthruit3");  // MAUI if needed
 
 builder.Build().Run();

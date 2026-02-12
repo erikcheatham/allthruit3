@@ -3,15 +3,16 @@ using AllThruit3.Shared.Extensions;
 using AllThruit3.Shared.Services;
 using AllThruit3.Web.Components;
 using AllThruit3.Web.Components.Account;
-using AllThruit3.Web.Extensions;
 using AllThruit3.Web.Services;
 using Carter;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
-// Simplified config: Rely on env vars from launchSettings/host
+var connectionString = builder.Configuration.GetConnectionString("AllThruitDbContextConnection") ?? throw new InvalidOperationException("Connection string 'AllThruitDbContextConnection' not found.");;
+
 builder.Configuration
     .AddEnvironmentVariables()
     .AddInMemoryCollection(new Dictionary<string, string?>
@@ -22,9 +23,9 @@ builder.Configuration
     });
 
 builder.AddServiceDefaults();
-// Add data abstractions (DbContext, Identity, repos, Blob, initializer)
+
 builder.Services.AddDataServices(builder.Configuration);
-// Add services to the container.
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
@@ -47,7 +48,7 @@ builder.Services.AddSharedServices(builder.Configuration);
 builder.Services.AddCarter();
 
 // Register custom endpoints (scans Web assembly for IEndpoint impls like MediaEndpoint)
-builder.Services.AddEndpoints(typeof(Program).Assembly); // Or specify typeof(MediaEndpoint).Assembly if separate
+AllThruit3.Web.Extensions.EndpointExtensions.AddEndpoints(builder.Services, typeof(Program).Assembly);
 
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
@@ -64,48 +65,54 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "AllThruit API v1"));
-    //app.UseMigrationsEndPoint(); // Now recognized due to the added using directive
-    //app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 }
 else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseStatusCodePagesWithReExecute("/not-found");
 
 app.UseHttpsRedirection();
-
-app.UseRouting();  // Add this to enable routing middleware before UseEndpoints
-
-app.UseAntiforgery();
 
 app.UseStaticFiles();
 
 app.UseBlazorFrameworkFiles();
 
-app.MapStaticAssets();
+//app.MapStaticAssets();
 
-app.MapCarter();
+// Add routing middleware
+app.UseRouting();
 
-// Map custom endpoints (after Carter for integration)
-app.MapEndpoints();
+// Add authentication and authorization (required for Identity in AllThruit3.Data)
+app.UseAuthentication();
+app.UseAuthorization();
 
+// Add anti-forgery after auth and before endpoints
+app.UseAntiforgery();
+
+// Explicitly add endpoint middleware and map everything inside
 app.UseEndpoints(endpoints =>
 {
+    // Map CQRS API endpoints (Carter modules from AllThruit3.Web.Endpoints)
+    endpoints.MapCarter();
+
+    AllThruit3.Web.Extensions.EndpointExtensions.MapEndpoints(app);
+
+    // Map Blazor Razor components (hybrid Server/WASM, with shared assembly for AllThruit3.Shared Razor)
     endpoints.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode()
         .AddInteractiveWebAssemblyRenderMode()
-        .AddAdditionalAssemblies(
-            typeof(AllThruit3.Shared._Imports).Assembly);
+        .AddAdditionalAssemblies(typeof(AllThruit3.Shared._Imports).Assembly);
+
+    // Fallback for Blazor WASM client-side routing (must be last)
+    endpoints.MapFallbackToFile("index.html");
 });
 
 app.Run();
