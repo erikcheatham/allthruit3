@@ -12,23 +12,21 @@ public class ReviewSearchEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         app.MapGet("/api/v1/reviews/by-vibe", async (
-        [FromQuery] string vibe,
-        IQueryHandler<GetReviewsByVibeQuery, Result<List<ReviewDTO>>> handler,
-        CancellationToken ct) =>
+            [FromQuery] string vibe,
+            [FromServices] IQueryHandler<GetReviewsByVibeQuery, Result<List<ReviewDTO>>> handler,
+            CancellationToken ct) =>
+        {
+            var query = new GetReviewsByVibeQuery(vibe);
+            var result = await handler.Handle(query, ct);
+            if (result.IsFailure)
             {
-                var query = new GetReviewsByVibeQuery(vibe);
-                var result = await handler.Handle(query, ct);
-
-                if (result.IsFailure)
-                {
-                    return Results.BadRequest(result.Error);
-                }
-
-                return Results.Ok(result.Value);
-            })
-            .WithTags("Reviews")
-            .WithSummary("Get reviews by vibe")
-            .Produces<List<ReviewDTO>>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status400BadRequest);
+                return Results.BadRequest(result.Error);
+            }
+            return Results.Ok(result.Value);
+        })
+        .WithTags("Reviews")
+        .WithSummary("Get reviews by vibe")
+        .Produces<List<ReviewDTO>>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest);
     }
 }

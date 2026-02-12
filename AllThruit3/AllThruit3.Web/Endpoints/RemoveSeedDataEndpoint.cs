@@ -3,6 +3,7 @@ using AllThruit3.Shared.Common;
 using AllThruit3.Shared.Common.Handlers;
 using Carter;
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;  // For [FromServices]
 using Microsoft.EntityFrameworkCore;
 using static AllThruit3.Web.Endpoints.RemoveSeedData;
 
@@ -17,17 +18,15 @@ public class RemoveSeedDataEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         app.MapDelete("/api/seed", async (
-            ICommandHandler<RemoveSeedDataCommand, bool> handler,
+            [FromServices] ICommandHandler<RemoveSeedDataCommand, bool> handler,  // Explicit [FromServices] fixes inference
             CancellationToken ct) =>
         {
             var command = new RemoveSeedDataCommand();
             var result = await handler.Handle(command, ct);
-
             if (result.IsFailure)
             {
                 return Results.BadRequest(result.Error);
             }
-
             return Results.Ok(result.Value); // true if successful
         })
         .WithTags("Admin", "Seed")
@@ -77,12 +76,11 @@ public static class RemoveSeedData
 
                 // Option 2: Only remove seeded data (recommended for production)
                 // var seededReviews = await _db.Reviews
-                //     .Where(r => r.IsSeeded == true) // if you have an IsSeeded flag
-                //     .ToListAsync(cancellationToken);
+                // .Where(r => r.IsSeeded == true) // if you have an IsSeeded flag
+                // .ToListAsync(cancellationToken);
                 // _db.Reviews.RemoveRange(seededReviews);
 
                 var rowsAffected = await _db.SaveChangesAsync(cancellationToken);
-
                 return Result.Success(true);
             }
             catch (Exception ex)

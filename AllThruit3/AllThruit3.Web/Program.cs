@@ -85,22 +85,18 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-
 app.UseAntiforgery();
-
-app.MapStaticAssets();
-
+app.UseStaticFiles();  // Add this to serve Blazor JS/runtime
+app.MapStaticAssets();  // Keep if needed for custom assets
 app.MapCarter();
-
-// Map custom endpoints (after Carter for integration)
 app.MapEndpoints();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(
-        typeof(AllThruit3.Shared._Imports).Assembly);
+    .AddAdditionalAssemblies(typeof(AllThruit3.Shared._Imports).Assembly);
 
 app.Run();

@@ -5,7 +5,9 @@
 @using AllThruit3.Shared.Features.Utilities
 @using AllThruit3.Shared.Models
 @using System.Threading
+@using Microsoft.JSInterop  // For console logging
 @inject IQueryHandler<SearchMediaQuery, MediaSearchResponse> MediaSearchHandler
+@inject IJSRuntime JS  // For debug logging
 
 <div class="container mt-4">
     <h2 class="mb-3">Search Movies/TV Shows</h2>
@@ -35,12 +37,12 @@
             {
                 <div class="col-md-4 mb-3">
                     <div class="card">
-                        <img src="@TMDBHelper.GetImageUrl(item.PosterPath, "w500")" class="card-img-top" alt="@(item.Title ?? item.Name) Poster" />
+                        <img src="@TMDBHelper.GetImageUrl(item.PosterPath, "w500")" class="card-img-top" alt="@(item.Title) Poster" />
                         <div class="card-body">
                             <h5 class="card-title">@item.Title</h5>
                             <p class="card-text">@item.Overview</p>
                             <p class="card-text"><small class="text-muted">Release: @item.ReleaseDate | Popularity: @item.Popularity</small></p>
-                            <img src="@TMDBHelper.GetImageUrl(item.BackdropPath, "w1280")" class="img-fluid mt-2" alt="@(item.Title ?? item.Name) Backdrop" />
+                            <img src="@TMDBHelper.GetImageUrl(item.BackdropPath, "w1280")" class="img-fluid mt-2" alt="@(item.Title) Backdrop" />
                             <!-- Add review button or link to detail page -->
                             <a href="/movie/@item.Id" class="btn btn-primary">Review</a>
                         </div>
@@ -69,15 +71,16 @@
         errorMessage = null;
         responseMessage = null;
         results = null;
+        StateHasChanged();  // Force UI refresh for loading spinner
 
         try
         {
             var query = new SearchMediaQuery(searchQuery, mediaType);
             var result = await MediaSearchHandler.Handle(query, CancellationToken.None);
-
             if (result.IsFailure)
             {
-                errorMessage = result.Error.Message;  // e.g., validation or TMDB error
+                errorMessage = result.Error.Message; // e.g., validation or TMDB error
+                await JS.InvokeVoidAsync("console.error", $"Media search error: {errorMessage}");  // Debug log
             }
             else
             {
@@ -89,10 +92,12 @@
         catch (Exception ex)
         {
             errorMessage = $"An unexpected error occurred: {ex.Message}";
+            await JS.InvokeVoidAsync("console.error", $"Media search exception: {ex}");  // Full stack for debugging
         }
         finally
         {
             isLoading = false;
+            StateHasChanged();  // Ensure UI updates post-task
         }
     }
 }

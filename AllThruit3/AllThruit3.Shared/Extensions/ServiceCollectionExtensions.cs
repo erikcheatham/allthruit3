@@ -2,7 +2,8 @@
 using AllThruit3.Shared.Common.Handlers;
 using AllThruit3.Shared.Configuration;
 using AllThruit3.Shared.DTOs;
-using AllThruit3.Shared.Features.Media;  // Adjust if moving to Web
+using AllThruit3.Shared.Features.Identity;
+using AllThruit3.Shared.Features.Media; // Adjust if moving to Web
 using AllThruit3.Shared.Models;
 using AllThruit3.Shared.Repositories;
 using AllThruit3.Shared.Services;
@@ -35,7 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(appSettings);
 
         // TMDB HttpClient with Polly retry policy
-        services.AddHttpClient<TMDBClient>((sp, client) =>
+        services.AddHttpClient<ITMDBClient, TMDBClient>((sp, client) =>
         {
             var settings = sp.GetRequiredService<AppSettings>();
             client.BaseAddress = new Uri(settings.TMDBUrl);
@@ -50,7 +51,7 @@ public static class ServiceCollectionExtensions
             .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
 
         TypeAdapterConfig.GlobalSettings
-            .ForType<SearchMediaQueryHandler.TMDBMediaItem, MediaResult>()
+            .ForType<TMDBMediaItem, MediaResult>() // Now public type
             .Map(dest => dest.Title, src => src.Title ?? src.Name ?? string.Empty)
             .Map(dest => dest.ReleaseDate, src => src.ReleaseDate ?? src.FirstAirDate);
 
@@ -68,18 +69,23 @@ public static class ServiceCollectionExtensions
                     ?? "https://localhost:7199/";
                 client.BaseAddress = new Uri(baseUrl);
             });
-        }
-        else
-        {
-            // Server-only registrations
+
+            services.AddHttpClient<IIdentityClient, IdentityClient>((sp, client) =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>(); // Inject config
+                var baseUrl = configuration.GetValue<string>("AppSettings:ApiBaseUrl") ?? "https://localhost:7199/";
+                client.BaseAddress = new Uri(baseUrl);
+                // Optional: Add Polly retries like TMDB if needed
+                // .AddPolicyHandler(HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+            });
+
+            // Scan/register client-only handlers (e.g., Identity proxies)
             var assembliesToScan = new[]
             {
-                typeof(ServiceCollectionExtensions).Assembly, // Shared project
-                Assembly.GetExecutingAssembly() // Entry point / Web project
-                // Add more assemblies later if needed, e.g. typeof(SomeHandlerInApplication).Assembly
+                typeof(ServiceCollectionExtensions).Assembly  // Shared project
+                // Add more if needed for client-specific
             };
 
-            // Register all query/command handlers
             services.Scan(scan => scan
                 .FromAssemblies(assembliesToScan)
                 .AddClasses(classes => classes.AssignableTo(typeof(IQueryHandler<,>)))
@@ -89,6 +95,32 @@ public static class ServiceCollectionExtensions
                     .AsImplementedInterfaces()
                     .WithScopedLifetime()
                 .AddClasses(classes => classes.AssignableTo(typeof(ICommandHandler<,>)))
+                    .AsImplementedInterfaces()
+                    .WithScopedLifetime()
+            );
+        }
+        else
+        {
+            // Server-only registrations (Web API)
+            var assembliesToScan = new[]
+            {
+                typeof(ServiceCollectionExtensions).Assembly, // Shared project
+                Assembly.GetExecutingAssembly() // Entry point / Web project
+                // Add more assemblies later if needed, e.g. typeof(SomeHandlerInApplication).Assembly
+            };
+
+            // Register all query/command handlers (excluding client-only like Identity proxies)
+            services.Scan(scan => scan
+                .FromAssemblies(assembliesToScan)
+                .AddClasses(classes => classes.AssignableTo(typeof(IQueryHandler<,>)))
+                    .AsImplementedInterfaces()
+                    .WithScopedLifetime()
+                .AddClasses(classes => classes.AssignableTo(typeof(ICommandHandler<>)))
+                    .AsImplementedInterfaces()
+                    .WithScopedLifetime()
+                .AddClasses(classes => classes
+                    .AssignableTo(typeof(ICommandHandler<,>))
+                    .Where(type => !type.Namespace!.Contains("Identity"))) // Exclude Identity namespace to skip client proxies
                     .AsImplementedInterfaces()
                     .WithScopedLifetime()
             );
@@ -104,7 +136,6 @@ public static class ServiceCollectionExtensions
             //services.Decorate(typeof(ICommandHandler<>), typeof(ValidationDecorator.CommandBaseHandler<>));
             //services.Decorate(typeof(ICommandHandler<,>), typeof(LoggingDecorator.CommandHandler<,>));
             //services.Decorate(typeof(ICommandHandler<>), typeof(LoggingDecorator.CommandBaseHandler<>));
-
             // Optional generic API client
             services.AddHttpClient("ApiClient", (sp, client) =>
             {
