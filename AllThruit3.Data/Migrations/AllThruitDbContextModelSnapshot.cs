@@ -156,13 +156,7 @@ namespace AllThruit3.Data.Migrations
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FirstAirDate")
-                        .HasColumnType("nvarchar(max)");
-
                     b.PrimitiveCollection<string>("GenreIds")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Overview")
@@ -211,10 +205,7 @@ namespace AllThruit3.Data.Migrations
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("MediaId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("MediaId1")
+                    b.Property<Guid?>("MediaId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Rating")
@@ -240,7 +231,7 @@ namespace AllThruit3.Data.Migrations
 
                     b.HasIndex("CreatedBy");
 
-                    b.HasIndex("MediaId1");
+                    b.HasIndex("MediaId");
 
                     b.ToTable("Reviews");
                 });
@@ -410,7 +401,7 @@ namespace AllThruit3.Data.Migrations
 
                     b.HasOne("AllThruit3.Data.Entities.Media", "Media")
                         .WithMany()
-                        .HasForeignKey("MediaId1");
+                        .HasForeignKey("MediaId");
 
                     b.Navigation("Media");
                 });

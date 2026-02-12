@@ -4,15 +4,13 @@ namespace AllThruit3.Data.Entities;
 
 public class Media
 {
-    public Guid Id { get; set; }
-    public string? Title { get; set; }
-    public string? Name { get; set; }
-    public string? Overview { get; set; }
-    public string? ReleaseDate { get; set; }
-    public string? FirstAirDate { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string? Title { get; set; } = string.Empty;
+    public string? Overview { get; set; } = string.Empty;
+    public string? ReleaseDate { get; set; } = string.Empty;
     public double Popularity { get; set; }
-    public string? PosterPath { get; set; } // TMDB path
-    public string? BackdropPath { get; set; }
+    public string? PosterPath { get; set; } = string.Empty;
+    public string? BackdropPath { get; set; } = string.Empty;
     public List<int>? GenreIds { get; set; }
     public bool Adult { get; set; }
     public double VoteAverage { get; set; }

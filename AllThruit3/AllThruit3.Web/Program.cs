@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("AllThruitDbContextConnection") ?? throw new InvalidOperationException("Connection string 'AllThruitDbContextConnection' not found.");;
 
+// Note: Align connection string name if needed; assuming DataServices uses "DefaultConnection" internally
 builder.Configuration
     .AddEnvironmentVariables()
     .AddInMemoryCollection(new Dictionary<string, string?>
@@ -23,7 +23,6 @@ builder.Configuration
     });
 
 builder.AddServiceDefaults();
-
 builder.Services.AddDataServices(builder.Configuration);
 
 builder.Services.AddRazorComponents()
@@ -42,7 +41,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 
 // Add device-specific services used by the AllThruit.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
-
 builder.Services.AddSharedServices(builder.Configuration);
 
 builder.Services.AddCarter();
@@ -85,8 +83,6 @@ app.UseStaticFiles();
 
 app.UseBlazorFrameworkFiles();
 
-//app.MapStaticAssets();
-
 // Add routing middleware
 app.UseRouting();
 
@@ -97,22 +93,19 @@ app.UseAuthorization();
 // Add anti-forgery after auth and before endpoints
 app.UseAntiforgery();
 
-// Explicitly add endpoint middleware and map everything inside
-app.UseEndpoints(endpoints =>
-{
-    // Map CQRS API endpoints (Carter modules from AllThruit3.Web.Endpoints)
-    endpoints.MapCarter();
+// Map CQRS API endpoints (Carter modules from AllThruit3.Web.Endpoints)
+app.MapCarter();
 
-    AllThruit3.Web.Extensions.EndpointExtensions.MapEndpoints(app);
+// Map custom endpoints via EndpointExtensions
+AllThruit3.Web.Extensions.EndpointExtensions.MapEndpoints(app);
 
-    // Map Blazor Razor components (hybrid Server/WASM, with shared assembly for AllThruit3.Shared Razor)
-    endpoints.MapRazorComponents<App>()
-        .AddInteractiveServerRenderMode()
-        .AddInteractiveWebAssemblyRenderMode()
-        .AddAdditionalAssemblies(typeof(AllThruit3.Shared._Imports).Assembly);
+// Map Blazor Razor components (hybrid Server/WASM, with shared assembly for AllThruit3.Shared Razor)
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(AllThruit3.Shared._Imports).Assembly);
 
-    // Fallback for Blazor WASM client-side routing (must be last)
-    endpoints.MapFallbackToFile("index.html");
-});
+// Fallback for Blazor WASM client-side routing (must be last)
+app.MapFallbackToFile("index.html");
 
 app.Run();

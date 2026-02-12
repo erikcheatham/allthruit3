@@ -7,14 +7,9 @@ using Microsoft.Extensions.Hosting;
 
 namespace AllThruit3.Data;
 
-public class AllThruitDbInitializer : IHostedService
+public class AllThruitDbInitializer(IServiceProvider serviceProvider) : IHostedService
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public AllThruitDbInitializer(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -50,37 +45,23 @@ public class AllThruitDbInitializer : IHostedService
             testUser = existingUser;
         }
 
-        // Seed sample reviews (if none exist; expand with TMDB/Blob if injected)
+        // Seed sample Media if none
+        if (!await dbContext.Media.AnyAsync(cancellationToken))
+        {
+            var sampleMedia1 = new Media { Id = Guid.NewGuid(), Title = "Inception", PosterPath = "/8ZTVqvKDQ8emxNAaBekwX2iJ2R4.jpg", CreatedBy = testUser.Id, CreatedOn = DateTime.UtcNow };  // TMDB sample path
+            var sampleMedia2 = new Media { Id = Guid.NewGuid(), Title = "The Matrix", PosterPath = "/f89U3ADr1WkGrDBQQJDwBCejBBE.jpg", CreatedBy = testUser.Id, CreatedOn = DateTime.UtcNow };
+            dbContext.Media.AddRange(sampleMedia1, sampleMedia2);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        // Seed reviews with MediaId and vibes
         if (!await dbContext.Reviews.AnyAsync(cancellationToken))
         {
+            var media = await dbContext.Media.ToListAsync(cancellationToken);
             dbContext.Reviews.AddRange(
-                new Review
-                {
-                    Id = Guid.NewGuid(),
-                    CreatedBy = testUser.Id, // Assumes UserId is Guid; adjust if string
-                    Text = "Angry review of a bad movie!",
-                    Rating = 2,
-                    CreatedOn = DateTime.UtcNow,
-                    Vibe = "Angry"
-                },
-                new Review
-                {
-                    Id = Guid.NewGuid(),
-                    CreatedBy = testUser.Id,
-                    Text = "Awestruck by this masterpiece!",
-                    Rating = 9,
-                    CreatedOn = DateTime.UtcNow,
-                    Vibe = "Awestruck"
-                },
-                new Review
-                {
-                    Id = Guid.NewGuid(),
-                    CreatedBy = testUser.Id,
-                    Text = "Informative breakdown of plot and themes.",
-                    Rating = 6,
-                    CreatedOn = DateTime.UtcNow,
-                    Vibe = "Informative"
-                }
+                new Review { Id = Guid.NewGuid(), CreatedBy = testUser.Id, Text = "Angry review!", Rating = 2, CreatedOn = DateTime.UtcNow, Vibe = "Angry", MediaId = media[0].Id },
+                new Review { Id = Guid.NewGuid(), CreatedBy = testUser.Id, Text = "Awestruck masterpiece!", Rating = 9, CreatedOn = DateTime.UtcNow, Vibe = "Awestruck", MediaId = media[1].Id },
+                new Review { Id = Guid.NewGuid(), CreatedBy = testUser.Id, Text = "Informative breakdown.", Rating = 6, CreatedOn = DateTime.UtcNow, Vibe = "Informative", MediaId = media[0].Id }
             );
             await dbContext.SaveChangesAsync(cancellationToken);
         }

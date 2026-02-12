@@ -189,10 +189,8 @@ namespace AllThruit3.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Overview = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ReleaseDate = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FirstAirDate = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Popularity = table.Column<double>(type: "float", nullable: false),
                     PosterPath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BackdropPath = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -225,8 +223,7 @@ namespace AllThruit3.Data.Migrations
                     Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Subject = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Vibe = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MediaId = table.Column<int>(type: "int", nullable: true),
-                    MediaId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    MediaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -240,8 +237,8 @@ namespace AllThruit3.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Reviews_Media_MediaId1",
-                        column: x => x.MediaId1,
+                        name: "FK_Reviews_Media_MediaId",
+                        column: x => x.MediaId,
                         principalTable: "Media",
                         principalColumn: "Id");
                 });
@@ -306,9 +303,9 @@ namespace AllThruit3.Data.Migrations
                 column: "CreatedBy");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Reviews_MediaId1",
+                name: "IX_Reviews_MediaId",
                 table: "Reviews",
-                column: "MediaId1");
+                column: "MediaId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Media_Reviews_ReviewId",
